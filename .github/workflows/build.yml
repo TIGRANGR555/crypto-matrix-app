@@ -36,7 +36,8 @@ jobs:
 
     - name: Build APK
       run: |
-        yes | buildozer android debug
+        # Using --unattended handles license agreements automatically without breaking pipes
+        buildozer --unattended android debug
       env:
         APP_ANDROID_ACCEPT_SDK_LICENSE: "y"
         ANDROIDAPI: "33"
