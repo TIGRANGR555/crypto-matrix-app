@@ -36,10 +36,12 @@ jobs:
 
     - name: Build APK
       run: |
-        # Removed the failing clean command since the environment is already fresh
         yes | buildozer android debug
       env:
         APP_ANDROID_ACCEPT_SDK_LICENSE: "y"
+        ANDROIDAPI: "33"
+        ANDROIDMINAPI: "24"
+        ANDROIDNDK: "r25c"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
