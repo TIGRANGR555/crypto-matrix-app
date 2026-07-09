@@ -15,6 +15,7 @@ log_level = 2
 warn_on_root = 1
 
 [target]
+# Hardcoding these fields inside the spec file forces Buildozer to bypass r28c
 android.api = 33
 android.minapi = 24
 android.ndk = 25c
