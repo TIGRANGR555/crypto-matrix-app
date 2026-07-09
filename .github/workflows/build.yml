@@ -34,13 +34,13 @@ jobs:
         pip install --upgrade pip
         pip install "buildozer>=1.5.0" cython setuptools
 
-    - name: Setup Isolated Android SDK & Tools (Fixes Aidl)
+    - name: Setup Isolated Android SDK & Link Aidl
       run: |
-        # 1. Create a pristine directory for our standalone Android SDK
+        # 1. Create directory structures for the Android SDK
         mkdir -p $HOME/android-sdk/cmdline-tools
         cd $HOME/android-sdk/cmdline-tools
         
-        # 2. Download official Google command line utilities
+        # 2. Download and unzip Google command line utilities
         wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
         unzip -q commandlinetools-linux-9477386_latest.zip
         mv cmdline-tools latest
@@ -50,12 +50,15 @@ jobs:
         echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
         echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
         
-        # 4. Install explicit SDK platforms and Build Tools (which includes aidl)
+        # 4. Install explicit SDK platforms and Build Tools
         export ANDROID_HOME=$HOME/android-sdk
         yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
         $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
         
-        # 5. Inject the newly compiled build-tools containing aidl into the global environment path
+        # 5. FIX FOR "Aidl not found": Symlink aidl into the platform-tools folder where Buildozer looks
+        ln -s $HOME/android-sdk/build-tools/33.0.2/aidl $HOME/android-sdk/platform-tools/aidl
+        
+        # 6. Add build-tools folder explicitly to the pipeline PATH
         echo "$HOME/android-sdk/build-tools/33.0.2" >> $GITHUB_PATH
 
     - name: Build APK with Controlled Toolchain
