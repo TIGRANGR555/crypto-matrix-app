@@ -27,25 +27,27 @@ jobs:
     - name: Install Buildozer Dependencies
       run: |
         sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk xclip libffi-dev libssl-dev autoconf libtool pkg-config cmake zlib1g-dev python3-pip aidl libstdc++6
+        sudo apt install -y git zip unzip openjdk-17-jdk xclip libffi-dev libssl-dev autoconf libtool pkg-config cmake zlib1g-dev python3-pip aidl libstdc++6 wget
 
     - name: Install Buildozer and Cython
       run: |
         pip install --upgrade pip
         pip install "buildozer>=1.5.0" cython setuptools
 
+    - name: Manually Pre-Install Correct Android NDK (r25c)
+      run: |
+        mkdir -p /home/runner/android-ndk
+        cd /home/runner/android-ndk
+        wget -q https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
+        unzip -q android-ndk-r25c-linux.zip
+        rm android-ndk-r25c-linux.zip
+
     - name: Build APK
       run: |
-        # Using --unattended handles license agreements automatically without breaking pipes
         buildozer --unattended android debug
       env:
         APP_ANDROID_ACCEPT_SDK_LICENSE: "y"
         ANDROIDAPI: "33"
         ANDROIDMINAPI: "24"
-        ANDROIDNDK: "r25c"
-
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: CryptoMatrix-APK
-        path: bin/*.apk
+        # Force the exact path to the manually installed NDK r25c
+        ANDROIDNDK: "/home/runner/android-ndk/android-ndk-r25c"
