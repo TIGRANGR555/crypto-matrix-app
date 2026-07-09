@@ -24,7 +24,7 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Buildozer Dependencies
+    - name: Install System Dependencies
       run: |
         sudo apt update
         sudo apt install -y git zip unzip openjdk-17-jdk xclip libffi-dev libssl-dev autoconf libtool pkg-config cmake zlib1g-dev python3-pip libstdc++6 wget
@@ -34,19 +34,36 @@ jobs:
         pip install --upgrade pip
         pip install "buildozer>=1.5.0" cython setuptools
 
-    - name: Install Android Build Tools (Fixes Missing Aidl)
+    - name: Setup Isolated Android SDK & Tools (Fixes Aidl)
       run: |
-        # Use the pre-installed SDK manager to fetch the correct build tools containing aidl
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;34.0.0"
+        # 1. Create a pristine directory for our standalone Android SDK
+        mkdir -p $HOME/android-sdk/cmdline-tools
+        cd $HOME/android-sdk/cmdline-tools
         
-        # Add the newly installed build-tools folder directly to the system PATH so buildozer finds aidl instantly
-        echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
+        # 2. Download official Google command line utilities
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+        unzip -q commandlinetools-linux-9477386_latest.zip
+        mv cmdline-tools latest
+        rm commandlinetools-linux-9477386_latest.zip
+        
+        # 3. Export clean environmental paths
+        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+        echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        
+        # 4. Install explicit SDK platforms and Build Tools (which includes aidl)
+        export ANDROID_HOME=$HOME/android-sdk
+        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
+        
+        # 5. Inject the newly compiled build-tools containing aidl into the global environment path
+        echo "$HOME/android-sdk/build-tools/33.0.2" >> $GITHUB_PATH
 
-    - name: Build APK
+    - name: Build APK with Controlled Toolchain
       run: |
         buildozer --unattended android debug
       env:
         APP_ANDROID_ACCEPT_SDK_LICENSE: "y"
+        ANDROID_HOME: "/home/runner/android-sdk"
         ANDROIDAPI: "33"
         ANDROIDMINAPI: "24"
         ANDROIDNDK: "r25c"
