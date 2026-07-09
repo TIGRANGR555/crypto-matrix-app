@@ -34,10 +34,9 @@ jobs:
         pip install --upgrade pip
         pip install "buildozer>=1.5.0" cython setuptools
 
-    - name: Clean and Build APK
+    - name: Build APK
       run: |
-        # Clean past build residue to fix toolchain pipelines
-        buildozer android clean
+        # Removed the failing clean command since the environment is already fresh
         yes | buildozer android debug
       env:
         APP_ANDROID_ACCEPT_SDK_LICENSE: "y"
